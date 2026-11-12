@@ -32,7 +32,7 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 | GET | `/api/marques` | Liste des marques |
 | GET | `/api/fournisseurs` | Liste des fournisseurs |
 | GET | `/api/articles` | Liste des articles |
-| POST | `/api/sync` | Upsert par `uuid` des lignes locales, renvoie l'état complet du serveur |
+| POST | `/api/sync` | Upsert par `uuid` des lignes locales (`"deleted": true` = suppression douce), renvoie l'état complet du serveur |
 
 Exemple de corps pour `POST /api/sync` :
 

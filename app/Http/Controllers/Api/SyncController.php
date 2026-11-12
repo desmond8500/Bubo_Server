@@ -26,17 +26,20 @@ class SyncController extends Controller
             'marques' => ['array'],
             'marques.*.uuid' => ['required', 'uuid'],
             'marques.*.nom' => ['required', 'string', 'max:255'],
+            'marques.*.deleted' => ['sometimes', 'boolean'],
 
             'fournisseurs' => ['array'],
             'fournisseurs.*.uuid' => ['required', 'uuid'],
             'fournisseurs.*.nom' => ['required', 'string', 'max:255'],
             'fournisseurs.*.contact' => ['nullable', 'string', 'max:255'],
+            'fournisseurs.*.deleted' => ['sometimes', 'boolean'],
 
             'articles' => ['array'],
             'articles.*.uuid' => ['required', 'uuid'],
             'articles.*.nom' => ['required', 'string', 'max:255'],
             'articles.*.prix' => ['required', 'numeric', 'min:0'],
             'articles.*.depense_le' => ['required', 'date'],
+            'articles.*.deleted' => ['sometimes', 'boolean'],
             'articles.*.marque_uuid' => ['nullable', 'uuid'],
             'articles.*.fournisseur_uuid' => ['nullable', 'uuid'],
         ]);
@@ -46,6 +49,18 @@ class SyncController extends Controller
                 $fillable = (new $model)->getFillable();
 
                 foreach ($data[$key] ?? [] as $row) {
+                    $existing = $model::withTrashed()->where('uuid', $row['uuid'])->first();
+
+                    if ($row['deleted'] ?? false) {
+                        $existing?->delete();
+                        continue;
+                    }
+
+                    // Une ligne déjà supprimée côté serveur le reste.
+                    if ($existing?->trashed()) {
+                        continue;
+                    }
+
                     $model::updateOrCreate(
                         ['uuid' => $row['uuid']],
                         Arr::only($row, $fillable)
