@@ -29,7 +29,7 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 | POST | `/api/login` | Connexion (`email`, `password`), renvoie `token` et `user` |
 | POST | `/api/logout` | Révoque le token courant (authentifié) |
 | GET | `/api/me` | Utilisateur courant (authentifié) |
-| GET | `/api/{marques,fournisseurs,articles,depenses}` | Données communes : visibles par tous les utilisateurs connectés (avec leur `auteur`) |
+| GET | `/api/{categories,marques,fournisseurs,articles,depenses}` | Données communes : visibles par tous les utilisateurs connectés (avec leur `auteur`) |
 | GET | `/api/{depenses_personnelles,revenus,emprunts}` | Données privées : uniquement celles de l'utilisateur connecté |
 | GET | `/api/users` | Liste des utilisateurs et de leurs rôles (admin) |
 | PATCH | `/api/users/{id}` | Change le rôle (`admin`, `membre`, `lecteur`) (admin) |
@@ -76,7 +76,7 @@ L'inscription est ouverte : pour la fermer en production, retirer la route `POST
 
 | Données | Visibilité |
 | --- | --- |
-| Marques, fournisseurs, articles, **dépenses générales** (`depenses`) | communes : tous les utilisateurs connectés les voient |
+| **Catégories**, marques, fournisseurs, articles, **dépenses générales** (`depenses`) | communes : tous les utilisateurs connectés les voient |
 | **Dépenses personnelles**, revenus, emprunts | privées : uniquement leur propriétaire |
 
 Chaque ligne commune garde son auteur (`user_id` et `auteur.name`). Droits d'écriture sur les données communes :

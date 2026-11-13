@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Models\Categorie;
 use App\Models\Depense;
 use App\Models\DepensePersonnelle;
 use App\Models\Emprunt;
@@ -23,6 +24,7 @@ use Illuminate\Support\Str;
 class SyncController extends Controller
 {
     public const MODELS = [
+        'categories' => Categorie::class,
         'marques' => Marque::class,
         'fournisseurs' => Fournisseur::class,
         'articles' => Article::class,
@@ -33,10 +35,10 @@ class SyncController extends Controller
     ];
 
     /**
-     * Données communes (catalogue et dépenses générales) : visibles par tous les utilisateurs connectés.
+     * Données communes (catégories, catalogue et dépenses générales) : visibles par tous les utilisateurs connectés.
      * Toutes les autres tables sont privées : chacun ne voit et ne modifie que ses propres lignes.
      */
-    public const SHARED = ['marques', 'fournisseurs', 'articles', 'depenses'];
+    public const SHARED = ['categories', 'marques', 'fournisseurs', 'articles', 'depenses'];
 
     /** Champs images : l'app envoie une data URL, le serveur renvoie l'URL publique du fichier. */
     private const IMAGE_FIELDS = [
@@ -159,6 +161,10 @@ class SyncController extends Controller
         $image = ['nullable', 'string', 'max:3000000'];
 
         return [
+            ...$this->common('categories'),
+            'categories.*.nom' => ['required', 'string', 'max:255'],
+            'categories.*.description' => ['nullable', 'string'],
+
             ...$this->common('marques'),
             'marques.*.nom' => ['required', 'string', 'max:255'],
             'marques.*.description' => ['nullable', 'string'],
@@ -180,12 +186,14 @@ class SyncController extends Controller
 
             ...$this->common('depenses'),
             'depenses.*.article_uuid' => ['required', 'uuid'],
+            'depenses.*.categorie_uuid' => ['nullable', 'uuid'],
             'depenses.*.quantite' => ['required', 'numeric', 'min:0'],
             'depenses.*.montant' => ['required', 'numeric', 'min:0'],
             'depenses.*.date' => ['required', 'date'],
 
             ...$this->common('depenses_personnelles'),
             'depenses_personnelles.*.designation' => ['required', 'string', 'max:255'],
+            'depenses_personnelles.*.categorie_uuid' => ['nullable', 'uuid'],
             'depenses_personnelles.*.quantite' => ['required', 'numeric', 'min:0'],
             'depenses_personnelles.*.montant' => ['required', 'numeric', 'min:0'],
             'depenses_personnelles.*.date' => ['required', 'date'],
