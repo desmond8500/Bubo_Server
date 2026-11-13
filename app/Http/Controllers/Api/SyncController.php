@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Depense;
+use App\Models\DepensePersonnelle;
 use App\Models\Emprunt;
 use App\Models\Fournisseur;
 use App\Models\Marque;
@@ -23,6 +24,7 @@ class SyncController extends Controller
         'fournisseurs' => Fournisseur::class,
         'articles' => Article::class,
         'depenses' => Depense::class,
+        'depenses_personnelles' => DepensePersonnelle::class,
         'revenus' => Revenu::class,
         'emprunts' => Emprunt::class,
     ];
@@ -115,6 +117,12 @@ class SyncController extends Controller
             'depenses.*.quantite' => ['required', 'numeric', 'min:0'],
             'depenses.*.montant' => ['required', 'numeric', 'min:0'],
             'depenses.*.date' => ['required', 'date'],
+
+            ...$this->common('depenses_personnelles'),
+            'depenses_personnelles.*.designation' => ['required', 'string', 'max:255'],
+            'depenses_personnelles.*.quantite' => ['required', 'numeric', 'min:0'],
+            'depenses_personnelles.*.montant' => ['required', 'numeric', 'min:0'],
+            'depenses_personnelles.*.date' => ['required', 'date'],
 
             ...$this->common('revenus'),
             'revenus.*.description' => ['required', 'string', 'max:255'],

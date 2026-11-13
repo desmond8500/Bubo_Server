@@ -29,7 +29,7 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 | POST | `/api/login` | Connexion (`email`, `password`), renvoie `token` et `user` |
 | POST | `/api/logout` | Révoque le token courant (authentifié) |
 | GET | `/api/me` | Utilisateur courant (authentifié) |
-| GET | `/api/{marques,fournisseurs,articles,depenses,revenus,emprunts}` | Liste de la ressource de l'utilisateur (authentifié) |
+| GET | `/api/{marques,fournisseurs,articles,depenses,depenses_personnelles,revenus,emprunts}` | Liste de la ressource de l'utilisateur (authentifié) |
 | POST | `/api/sync` (authentifié) | Upsert par `uuid` des lignes locales (`"deleted": true` = suppression douce), renvoie l'état complet du serveur |
 
 Exemple de corps pour `POST /api/sync` :
