@@ -11,7 +11,7 @@ class Revenu extends Model
 
     protected $fillable = ['uuid', 'description', 'montant', 'date'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 
     protected function casts(): array
     {

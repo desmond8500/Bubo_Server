@@ -39,12 +39,19 @@ class SyncController extends Controller
     {
         $data = $request->validate($this->rules());
 
-        DB::transaction(function () use ($data) {
+        $userId = (int) $request->user()->id;
+
+        DB::transaction(function () use ($data, $userId) {
             foreach (self::MODELS as $key => $model) {
                 $fillable = (new $model)->getFillable();
 
                 foreach ($data[$key] ?? [] as $row) {
                     $existing = $model::withTrashed()->where('uuid', $row['uuid'])->first();
+
+                    // Un uuid qui appartient à un autre utilisateur est ignoré.
+                    if ($existing && (int) $existing->user_id !== $userId) {
+                        continue;
+                    }
 
                     if ($row['deleted'] ?? false) {
                         $existing?->delete();
@@ -64,13 +71,18 @@ class SyncController extends Controller
                         }
                     }
 
-                    $model::updateOrCreate(['uuid' => $row['uuid']], $attributes);
+                    $record = $existing ?? new $model;
+                    $record->fill($attributes);
+                    $record->user_id = $userId;
+                    $record->save();
                 }
             }
         });
 
         return response()->json(
-            collect(self::MODELS)->map(fn (string $model) => $model::orderByDesc('id')->get())
+            collect(self::MODELS)->map(
+                fn (string $model) => $model::where('user_id', $userId)->orderByDesc('id')->get()
+            )
         );
     }
 

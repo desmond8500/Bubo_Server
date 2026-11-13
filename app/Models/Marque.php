@@ -11,5 +11,5 @@ class Marque extends Model
 
     protected $fillable = ['uuid', 'nom', 'description', 'logo'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 }

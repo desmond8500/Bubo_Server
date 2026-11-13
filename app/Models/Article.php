@@ -11,7 +11,7 @@ class Article extends Model
 
     protected $fillable = ['uuid', 'nom', 'prix', 'description', 'images', 'marque_uuid', 'fournisseur_uuid'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 
     protected function casts(): array
     {

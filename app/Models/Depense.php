@@ -11,7 +11,7 @@ class Depense extends Model
 
     protected $fillable = ['uuid', 'article_uuid', 'quantite', 'montant', 'date'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 
     protected function casts(): array
     {
