@@ -10,7 +10,7 @@ class Depense extends Model
 {
     use HasAuteur, SoftDeletes;
 
-    protected $fillable = ['uuid', 'article_uuid', 'categorie_uuid', 'quantite', 'montant', 'date'];
+    protected $fillable = ['uuid', 'article_uuid', 'categorie_uuid', 'quantite', 'montant', 'mode_paiement', 'date'];
 
     protected $hidden = ['id'];
 

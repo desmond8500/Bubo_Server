@@ -11,7 +11,7 @@ class DepensePersonnelle extends Model
 
     protected $table = 'depenses_personnelles';
 
-    protected $fillable = ['uuid', 'designation', 'categorie_uuid', 'quantite', 'montant', 'date'];
+    protected $fillable = ['uuid', 'designation', 'categorie_uuid', 'quantite', 'montant', 'mode_paiement', 'date'];
 
     protected $hidden = ['id', 'user_id'];
 

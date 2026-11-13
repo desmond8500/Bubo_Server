@@ -29,7 +29,8 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 | POST | `/api/login` | Connexion (`email`, `password`), renvoie `token` et `user` |
 | POST | `/api/logout` | Révoque le token courant (authentifié) |
 | GET | `/api/me` | Utilisateur courant (authentifié) |
-| GET | `/api/{categories,marques,fournisseurs,articles,depenses}` | Données communes : visibles par tous les utilisateurs connectés (avec leur `auteur`) |
+| GET | `/api/{budgets,categories,marques,fournisseurs,articles,depenses}` | Données communes : visibles par tous les utilisateurs connectés (avec leur `auteur`) |
+| GET | `/api/export/{marques,fournisseurs,articles}?format=csv\|json` | Téléchargement du catalogue (CSV en `;` avec BOM UTF-8, ou JSON) |
 | GET | `/api/{depenses_personnelles,revenus,emprunts}` | Données privées : uniquement celles de l'utilisateur connecté |
 | GET | `/api/users` | Liste des utilisateurs et de leurs rôles (admin) |
 | PATCH | `/api/users/{id}` | Change le rôle (`admin`, `membre`, `lecteur`) (admin) |
@@ -96,3 +97,24 @@ Il reste toujours au moins un administrateur. Les écritures refusées par `/api
 La table `journal` enregistre : inscriptions, connexions (réussies et échouées), déconnexions, changements de rôle,
 et créations / modifications / suppressions de données. Le contenu des données privées n'est jamais journalisé
 (seulement le type d'action et l'identifiant). Consultation : `GET /api/journal` (admin).
+
+## Mode de paiement, prêts et budget
+
+- **Mode de paiement** (`mode_paiement`, facultatif) sur les dépenses, dépenses personnelles, revenus et emprunts :
+  `orange_money`, `wave`, `espece`, `virement`, `cheque`. Toute autre valeur est refusée (422).
+- **Emprunts** : `rembourse` (booléen) et `date_remboursement`. Marquer un prêt remboursé sans date utilise la date du jour ;
+  l'annuler efface la date.
+- **Budget** (`budgets`, commun) : une suite de crédits (`description`, `montant` > 0, `date`). Le premier est le solde de départ,
+  les suivants alimentent le budget au fil du temps. Le solde de chaque mois (report des mois précédents + crédits − dépenses
+  générales) est calculé par l'application à partir de ces crédits et des dépenses générales, qui sont visibles par tous.
+  Les droits sont ceux des autres données communes (lecteur : lecture seule).
+
+## Téléchargement du catalogue
+
+```bash
+curl -H "Authorization: Bearer <token>" "https://buboserver.yonkou.info/api/export/articles?format=csv" -o articles.csv
+```
+
+Colonnes CSV : `nom;description;logo` (marques, fournisseurs) et `nom;prix;description;marque;fournisseur;images`
+(articles, images séparées par `|`). Les cellules commençant par `=`, `+`, `-` ou `@` sont préfixées d'une apostrophe
+pour empêcher l'exécution de formules à l'ouverture dans un tableur. Chaque export est journalisé.

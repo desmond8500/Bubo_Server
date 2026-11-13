@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\JournalController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\UserController;
@@ -26,6 +27,9 @@ Route::middleware('auth:sanctum')->group(function () {
     }
 
     Route::post('/sync', SyncController::class);
+
+    // Téléchargement du catalogue (données communes) : /api/export/marques?format=csv
+    Route::get('/export/{type}', ExportController::class)->whereIn('type', ExportController::TYPES);
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);

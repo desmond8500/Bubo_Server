@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Models\Budget;
 use App\Models\Categorie;
 use App\Models\Depense;
 use App\Models\DepensePersonnelle;
@@ -20,10 +21,15 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SyncController extends Controller
 {
+    /** Modes de paiement acceptés (dépenses, revenus et emprunts). */
+    public const MODES_PAIEMENT = ['orange_money', 'wave', 'espece', 'virement', 'cheque'];
+
     public const MODELS = [
+        'budgets' => Budget::class,
         'categories' => Categorie::class,
         'marques' => Marque::class,
         'fournisseurs' => Fournisseur::class,
@@ -35,10 +41,10 @@ class SyncController extends Controller
     ];
 
     /**
-     * Données communes (catégories, catalogue et dépenses générales) : visibles par tous les utilisateurs connectés.
+     * Données communes (budget, catégories, catalogue et dépenses générales) : visibles par tous les utilisateurs connectés.
      * Toutes les autres tables sont privées : chacun ne voit et ne modifie que ses propres lignes.
      */
-    public const SHARED = ['categories', 'marques', 'fournisseurs', 'articles', 'depenses'];
+    public const SHARED = ['budgets', 'categories', 'marques', 'fournisseurs', 'articles', 'depenses'];
 
     /** Champs images : l'app envoie une data URL, le serveur renvoie l'URL publique du fichier. */
     private const IMAGE_FIELDS = [
@@ -153,14 +159,24 @@ class SyncController extends Controller
             return trim(($article ?? 'article inconnu').' – '.$model->montant);
         }
 
+        if ($model instanceof Budget) {
+            return trim(($model->description ?: 'Crédit du budget').' – '.$model->montant);
+        }
+
         return (string) ($model->nom ?? $model->uuid);
     }
 
     private function rules(): array
     {
         $image = ['nullable', 'string', 'max:3000000'];
+        $mode = ['nullable', Rule::in(self::MODES_PAIEMENT)];
 
         return [
+            ...$this->common('budgets'),
+            'budgets.*.description' => ['nullable', 'string', 'max:255'],
+            'budgets.*.montant' => ['required', 'numeric', 'gt:0'],
+            'budgets.*.date' => ['required', 'date'],
+
             ...$this->common('categories'),
             'categories.*.nom' => ['required', 'string', 'max:255'],
             'categories.*.description' => ['nullable', 'string'],
@@ -189,6 +205,7 @@ class SyncController extends Controller
             'depenses.*.categorie_uuid' => ['nullable', 'uuid'],
             'depenses.*.quantite' => ['required', 'numeric', 'min:0'],
             'depenses.*.montant' => ['required', 'numeric', 'min:0'],
+            'depenses.*.mode_paiement' => $mode,
             'depenses.*.date' => ['required', 'date'],
 
             ...$this->common('depenses_personnelles'),
@@ -196,17 +213,22 @@ class SyncController extends Controller
             'depenses_personnelles.*.categorie_uuid' => ['nullable', 'uuid'],
             'depenses_personnelles.*.quantite' => ['required', 'numeric', 'min:0'],
             'depenses_personnelles.*.montant' => ['required', 'numeric', 'min:0'],
+            'depenses_personnelles.*.mode_paiement' => $mode,
             'depenses_personnelles.*.date' => ['required', 'date'],
 
             ...$this->common('revenus'),
             'revenus.*.description' => ['required', 'string', 'max:255'],
             'revenus.*.montant' => ['required', 'numeric', 'min:0'],
+            'revenus.*.mode_paiement' => $mode,
             'revenus.*.date' => ['required', 'date'],
 
             ...$this->common('emprunts'),
             'emprunts.*.description' => ['required', 'string', 'max:255'],
             'emprunts.*.montant' => ['required', 'numeric', 'min:0'],
+            'emprunts.*.mode_paiement' => $mode,
             'emprunts.*.date' => ['required', 'date'],
+            'emprunts.*.rembourse' => ['sometimes', 'boolean'],
+            'emprunts.*.date_remboursement' => ['nullable', 'date'],
         ];
     }
 

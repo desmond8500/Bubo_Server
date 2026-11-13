@@ -9,7 +9,7 @@ class Revenu extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid', 'description', 'montant', 'date'];
+    protected $fillable = ['uuid', 'description', 'montant', 'mode_paiement', 'date'];
 
     protected $hidden = ['id', 'user_id'];
 
