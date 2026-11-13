@@ -17,6 +17,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property string $role
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -30,6 +31,21 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+
+    /** admin : tout ; membre : crée des données communes et gère les siennes ; lecteur : consulte les données communes. */
+    public const ROLES = ['admin', 'membre', 'lecteur'];
+
+    protected $attributes = ['role' => 'membre'];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function canWriteShared(): bool
+    {
+        return in_array($this->role, ['admin', 'membre'], true);
+    }
 
     /**
      * Get the attributes that should be cast.

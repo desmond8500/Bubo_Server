@@ -29,7 +29,11 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 | POST | `/api/login` | Connexion (`email`, `password`), renvoie `token` et `user` |
 | POST | `/api/logout` | Révoque le token courant (authentifié) |
 | GET | `/api/me` | Utilisateur courant (authentifié) |
-| GET | `/api/{marques,fournisseurs,articles,depenses,depenses_personnelles,revenus,emprunts}` | Liste de la ressource de l'utilisateur (authentifié) |
+| GET | `/api/{marques,fournisseurs,articles,depenses}` | Données communes : visibles par tous les utilisateurs connectés (avec leur `auteur`) |
+| GET | `/api/{depenses_personnelles,revenus,emprunts}` | Données privées : uniquement celles de l'utilisateur connecté |
+| GET | `/api/users` | Liste des utilisateurs et de leurs rôles (admin) |
+| PATCH | `/api/users/{id}` | Change le rôle (`admin`, `membre`, `lecteur`) (admin) |
+| GET | `/api/journal` | Journal d'activité paginé, filtres `action` et `user_id` (admin) |
 | POST | `/api/sync` (authentifié) | Upsert par `uuid` des lignes locales (`"deleted": true` = suppression douce), renvoie l'état complet du serveur |
 
 Exemple de corps pour `POST /api/sync` :
@@ -67,3 +71,28 @@ class User extends Authenticatable
 
 Les lignes créées avant l'ajout de `user_id` n'ont pas de propriétaire et ne sont renvoyées à personne.
 L'inscription est ouverte : pour la fermer en production, retirer la route `POST /api/register`.
+
+## Données communes, données privées et rôles
+
+| Données | Visibilité |
+| --- | --- |
+| Marques, fournisseurs, articles, **dépenses générales** (`depenses`) | communes : tous les utilisateurs connectés les voient |
+| **Dépenses personnelles**, revenus, emprunts | privées : uniquement leur propriétaire |
+
+Chaque ligne commune garde son auteur (`user_id` et `auteur.name`). Droits d'écriture sur les données communes :
+
+| Rôle | Données communes | Données privées |
+| --- | --- | --- |
+| `admin` | lit, crée, corrige et supprime celles de tous ; gère les rôles et lit le journal | les siennes |
+| `membre` (par défaut) | lit tout, crée, corrige et supprime les siennes | les siennes |
+| `lecteur` | lit seulement | les siennes |
+
+Le premier compte créé est administrateur ; à la migration, le compte existant le plus ancien le devient.
+Il reste toujours au moins un administrateur. Les écritures refusées par `/api/sync` sont comptées dans `refuses`
+(exemple : `{"articles": 1}`) ; la réponse contient aussi `moi` (utilisateur courant avec son rôle à jour).
+
+## Journal d'activité
+
+La table `journal` enregistre : inscriptions, connexions (réussies et échouées), déconnexions, changements de rôle,
+et créations / modifications / suppressions de données. Le contenu des données privées n'est jamais journalisé
+(seulement le type d'action et l'identifiant). Consultation : `GET /api/journal` (admin).

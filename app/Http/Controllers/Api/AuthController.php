@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Journal;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,11 +21,16 @@ class AuthController extends Controller
             'password' => ['required', 'string', Password::min(8)],
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+        // Le tout premier compte est administrateur, les suivants sont membres.
+        $user->role = User::count() === 0 ? 'admin' : 'membre';
+        $user->save();
+
+        Journal::enregistrer($user, 'register', 'users', null, "Compte créé ({$user->role})");
 
         return $this->tokenResponse($user, 201);
     }
@@ -39,14 +45,19 @@ class AuthController extends Controller
         $user = User::where('email', $data['email'])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            Journal::enregistrer(null, 'login_echec', 'users', null, null, ['email' => $data['email']]);
+
             throw ValidationException::withMessages(['email' => ['Identifiants incorrects.']]);
         }
+
+        Journal::enregistrer($user, 'login');
 
         return $this->tokenResponse($user);
     }
 
     public function logout(Request $request): JsonResponse
     {
+        Journal::enregistrer($request->user(), 'logout');
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Déconnecté']);
@@ -54,14 +65,14 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user()->only(['id', 'name', 'email']));
+        return response()->json($request->user()->only(['id', 'name', 'email', 'role']));
     }
 
     private function tokenResponse(User $user, int $status = 200): JsonResponse
     {
         return response()->json([
             'token' => $user->createToken('mobile')->plainTextToken,
-            'user' => $user->only(['id', 'name', 'email']),
+            'user' => $user->only(['id', 'name', 'email', 'role']),
         ], $status);
     }
 }

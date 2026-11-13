@@ -8,8 +8,11 @@ use App\Models\Depense;
 use App\Models\DepensePersonnelle;
 use App\Models\Emprunt;
 use App\Models\Fournisseur;
+use App\Models\Journal;
 use App\Models\Marque;
 use App\Models\Revenu;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -29,6 +32,12 @@ class SyncController extends Controller
         'emprunts' => Emprunt::class,
     ];
 
+    /**
+     * Données communes (catalogue et dépenses générales) : visibles par tous les utilisateurs connectés.
+     * Toutes les autres tables sont privées : chacun ne voit et ne modifie que ses propres lignes.
+     */
+    public const SHARED = ['marques', 'fournisseurs', 'articles', 'depenses'];
+
     /** Champs images : l'app envoie une data URL, le serveur renvoie l'URL publique du fichier. */
     private const IMAGE_FIELDS = [
         'marques' => ['logo'],
@@ -36,27 +45,35 @@ class SyncController extends Controller
         'articles' => ['images'],
     ];
 
-    /** Reçoit les lignes créées hors ligne (upsert par uuid) et renvoie l'état complet du serveur. */
+    /**
+     * Reçoit les lignes créées ou modifiées hors ligne (upsert par uuid) et renvoie l'état du serveur.
+     * Droits sur les données communes : un lecteur n'écrit pas, un membre gère ses propres lignes,
+     * un administrateur peut tout corriger. Les écritures refusées sont comptées dans "refuses".
+     */
     public function __invoke(Request $request): JsonResponse
     {
         $data = $request->validate($this->rules());
+        $user = $request->user();
+        $refuses = [];
 
-        $userId = (int) $request->user()->id;
-
-        DB::transaction(function () use ($data, $userId) {
+        DB::transaction(function () use ($data, $user, &$refuses) {
             foreach (self::MODELS as $key => $model) {
+                $shared = in_array($key, self::SHARED, true);
                 $fillable = (new $model)->getFillable();
 
                 foreach ($data[$key] ?? [] as $row) {
                     $existing = $model::withTrashed()->where('uuid', $row['uuid'])->first();
 
-                    // Un uuid qui appartient à un autre utilisateur est ignoré.
-                    if ($existing && (int) $existing->user_id !== $userId) {
+                    if (! $this->peutEcrire($user, $shared, $existing)) {
+                        $refuses[$key] = ($refuses[$key] ?? 0) + 1;
                         continue;
                     }
 
                     if ($row['deleted'] ?? false) {
-                        $existing?->delete();
+                        if ($existing && ! $existing->trashed()) {
+                            $existing->delete();
+                            Journal::enregistrer($user, 'delete', $key, $row['uuid'], $shared ? $this->libelle($existing) : null);
+                        }
                         continue;
                     }
 
@@ -75,17 +92,66 @@ class SyncController extends Controller
 
                     $record = $existing ?? new $model;
                     $record->fill($attributes);
-                    $record->user_id = $userId;
+
+                    if ($existing && ! $record->isDirty()) {
+                        continue; // rien n'a changé : pas de sauvegarde, pas de ligne de journal
+                    }
+
+                    // L'auteur ne change jamais, même quand un administrateur corrige la ligne.
+                    if (! $existing) {
+                        $record->user_id = $user->id;
+                    }
+
                     $record->save();
+
+                    Journal::enregistrer(
+                        $user,
+                        $existing ? 'update' : 'create',
+                        $key,
+                        $row['uuid'],
+                        $shared ? $this->libelle($record) : null,
+                    );
                 }
             }
         });
 
-        return response()->json(
-            collect(self::MODELS)->map(
-                fn (string $model) => $model::where('user_id', $userId)->orderByDesc('id')->get()
-            )
-        );
+        $reponse = collect(self::MODELS)->map(function (string $model, string $key) use ($user) {
+            $requete = in_array($key, self::SHARED, true)
+                ? $model::with('auteur:id,name')
+                : $model::where('user_id', $user->id);
+
+            return $requete->orderByDesc('id')->get();
+        })->all();
+
+        $reponse['refuses'] = (object) $refuses;
+        $reponse['moi'] = $user->only(['id', 'name', 'email', 'role']);
+
+        return response()->json($reponse);
+    }
+
+    private function peutEcrire(User $user, bool $shared, ?Model $existing): bool
+    {
+        if (! $existing) {
+            return ! $shared || $user->canWriteShared();
+        }
+
+        if ($shared) {
+            return $user->isAdmin() || ((int) $existing->user_id === $user->id && $user->canWriteShared());
+        }
+
+        return (int) $existing->user_id === $user->id;
+    }
+
+    /** Libellé lisible pour le journal (uniquement pour les données communes). */
+    private function libelle(Model $model): string
+    {
+        if ($model instanceof Depense) {
+            $article = Article::withTrashed()->where('uuid', $model->article_uuid)->value('nom');
+
+            return trim(($article ?? 'article inconnu').' – '.$model->montant);
+        }
+
+        return (string) ($model->nom ?? $model->uuid);
     }
 
     private function rules(): array
