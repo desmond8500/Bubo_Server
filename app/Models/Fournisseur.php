@@ -11,7 +11,7 @@ class Fournisseur extends Model
 
     protected $table = 'fournisseurs';
 
-    protected $fillable = ['uuid', 'nom', 'contact'];
+    protected $fillable = ['uuid', 'nom', 'description', 'logo'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 }

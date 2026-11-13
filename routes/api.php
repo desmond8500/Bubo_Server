@@ -1,13 +1,24 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SyncController;
-use App\Models\Article;
-use App\Models\Fournisseur;
-use App\Models\Marque;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/marques', fn () => Marque::orderBy('nom')->get());
-Route::get('/fournisseurs', fn () => Fournisseur::orderBy('nom')->get());
-Route::get('/articles', fn () => Article::orderByDesc('depense_le')->orderByDesc('id')->get());
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
-Route::post('/sync', SyncController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    foreach (SyncController::MODELS as $uri => $model) {
+        Route::get("/{$uri}", fn (Request $request) => $model::where('user_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->get());
+    }
+
+    Route::post('/sync', SyncController::class);
+});

@@ -9,15 +9,15 @@ class Article extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid', 'nom', 'prix', 'depense_le', 'marque_uuid', 'fournisseur_uuid'];
+    protected $fillable = ['uuid', 'nom', 'prix', 'description', 'images', 'marque_uuid', 'fournisseur_uuid'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 
     protected function casts(): array
     {
         return [
             'prix' => 'float',
-            'depense_le' => 'date:Y-m-d',
+            'images' => 'array',
         ];
     }
 }

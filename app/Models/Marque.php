@@ -9,7 +9,7 @@ class Marque extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid', 'nom'];
+    protected $fillable = ['uuid', 'nom', 'description', 'logo'];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'user_id'];
 }
