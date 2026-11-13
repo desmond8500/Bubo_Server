@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // La table peut déjà exister si install:api a été lancé sur cette base avant le déploiement.
+        if (Schema::hasTable('personal_access_tokens')) {
+            return;
+        }
+
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
             $table->morphs('tokenable');
