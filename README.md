@@ -16,6 +16,7 @@ cd /chemin/vers/Bubo_Server
 cp .env.example .env && php artisan key:generate
 php artisan install:api --without-migration-prompt   # active routes/api.php
 php artisan migrate
+php artisan storage:link   # sert les logos et images envoyés par l'app (régler APP_URL dans .env)
 php artisan serve
 ```
 
@@ -29,9 +30,7 @@ php artisan config:publish cors   # puis autoriser l'origine http://localhost:51
 
 | Méthode | URL | Rôle |
 | --- | --- | --- |
-| GET | `/api/marques` | Liste des marques |
-| GET | `/api/fournisseurs` | Liste des fournisseurs |
-| GET | `/api/articles` | Liste des articles |
+| GET | `/api/{marques,fournisseurs,articles,depenses,revenus,emprunts}` | Liste de la ressource |
 | POST | `/api/sync` | Upsert par `uuid` des lignes locales (`"deleted": true` = suppression douce), renvoie l'état complet du serveur |
 
 Exemple de corps pour `POST /api/sync` :
