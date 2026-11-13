@@ -1,23 +1,18 @@
 # Bubo Server
 
-API Laravel 13 pour l'application [Bubo_Spents](https://github.com/desmond8500/Bubo_Spents).
+API Laravel 13 pour l'application [Bubo_Spents](https://github.com/desmond8500/Bubo_Spents) : authentification
+par token (Sanctum) et synchronisation des dépenses, revenus, emprunts, articles, marques et fournisseurs.
 
-Ce dépôt contient pour l'instant la couche métier (migrations, modèles, API de synchronisation).
-Le squelette Laravel (artisan, bootstrap, config, composer.json…) doit être généré une fois en local :
+## Installation
 
 ```bash
-# depuis un dossier temporaire
-composer create-project laravel/laravel tmp-bubo
+composer install
+cp .env.example .env && php artisan key:generate   # régler APP_URL (adresse publique du serveur)
 
-# copier le squelette dans ce dépôt sans écraser les fichiers existants
-cp -rn tmp-bubo/. /chemin/vers/Bubo_Server/
-cd /chemin/vers/Bubo_Server
-
-cp .env.example .env && php artisan key:generate
-php artisan install:api --without-migration-prompt   # active routes/api.php
+php artisan install:api   # installe Sanctum et charge routes/api.php (garder le routes/api.php existant)
 php artisan migrate
-php artisan storage:link   # sert les logos et images envoyés par l'app (régler APP_URL dans .env)
-php artisan serve
+php artisan storage:link  # sert les logos et images envoyés par l'app
+php artisan serve --host=0.0.0.0
 ```
 
 Pour que l'app web (Vite, port 5173) puisse appeler l'API :
