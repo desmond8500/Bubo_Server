@@ -10,7 +10,8 @@ class Article extends Model
 {
     use HasAuteur, SoftDeletes;
 
-    protected $fillable = ['uuid', 'nom', 'prix', 'description', 'images', 'marque_uuid', 'fournisseur_uuid'];
+    protected $fillable = ['uuid', 'nom', 'prix', 'description', 'images', 'marque_uuid', 'fournisseur_uuid',
+        'categorie_uuid', 'reference', 'unite', 'poids', 'caracteristiques'];
 
     protected $hidden = ['id'];
 
@@ -18,6 +19,7 @@ class Article extends Model
     {
         return [
             'prix' => 'float',
+            'poids' => 'float',
             'images' => 'array',
         ];
     }

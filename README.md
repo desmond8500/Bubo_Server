@@ -116,5 +116,10 @@ curl -H "Authorization: Bearer <token>" "https://buboserver.yonkou.info/api/expo
 ```
 
 Colonnes CSV : `nom;description;logo` (marques, fournisseurs) et `nom;prix;description;marque;fournisseur;images`
-(articles, images séparées par `|`). Les cellules commençant par `=`, `+`, `-` ou `@` sont préfixées d'une apostrophe
+(articles : `nom;reference;prix;unite;poids;description;marque;fournisseur;categorie;caracteristiques;images`, images séparées par `|`). Les cellules commençant par `=`, `+`, `-` ou `@` sont préfixées d'une apostrophe
 pour empêcher l'exécution de formules à l'ouverture dans un tableur. Chaque export est journalisé.
+
+
+## Articles : détails
+
+Un article peut porter `categorie_uuid`, `reference`, `unite` (piece, kg, g, l, ml, m, paquet, carton, sac, boite), `poids` (en kg ou selon l'unité) et `caracteristiques` (texte libre). Migration : `php artisan migrate --force`.

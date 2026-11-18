@@ -26,6 +26,8 @@ use Illuminate\Validation\Rule;
 class SyncController extends Controller
 {
     /** Modes de paiement acceptés (dépenses, revenus et emprunts). */
+    public const UNITES = ['piece', 'kg', 'g', 'l', 'ml', 'm', 'paquet', 'carton', 'sac', 'boite'];
+
     public const MODES_PAIEMENT = ['orange_money', 'wave', 'espece', 'virement', 'cheque'];
 
     public const MODELS = [
@@ -199,6 +201,11 @@ class SyncController extends Controller
             'articles.*.images.*' => ['string', 'max:3000000'],
             'articles.*.marque_uuid' => ['nullable', 'uuid'],
             'articles.*.fournisseur_uuid' => ['nullable', 'uuid'],
+            'articles.*.categorie_uuid' => ['nullable', 'uuid'],
+            'articles.*.reference' => ['nullable', 'string', 'max:255'],
+            'articles.*.unite' => ['nullable', Rule::in(self::UNITES)],
+            'articles.*.poids' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
+            'articles.*.caracteristiques' => ['nullable', 'string', 'max:5000'],
 
             ...$this->common('depenses'),
             'depenses.*.article_uuid' => ['required', 'uuid'],

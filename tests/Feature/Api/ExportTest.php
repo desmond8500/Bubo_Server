@@ -50,8 +50,8 @@ test('l\'export CSV a un BOM, des en-têtes et le séparateur point-virgule', fu
 
     expect($reponse->headers->get('content-type'))->toContain('text/csv')
         ->and($csv)->toStartWith("\xEF\xBB\xBF")
-        ->and($csv)->toContain('nom;prix;description;marque;fournisseur;images')
-        ->and($csv)->toContain('Chaussures;25000;"Pointure 42";Nike;"Marché Sandaga";https://exemple.test/a.jpg|https://exemple.test/b.jpg');
+        ->and($csv)->toContain('nom;reference;prix;unite;poids;description;marque;fournisseur;categorie;caracteristiques;images')
+        ->and($csv)->toContain('Chaussures;;25000;;;"Pointure 42";Nike;"Marché Sandaga";;;https://exemple.test/a.jpg|https://exemple.test/b.jpg');
 });
 
 test('les exports de marques et de fournisseurs fonctionnent', function () {

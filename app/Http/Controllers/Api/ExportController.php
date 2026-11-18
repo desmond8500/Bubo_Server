@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Models\Categorie;
 use App\Models\Fournisseur;
 use App\Models\Journal;
 use App\Models\Marque;
@@ -58,14 +59,20 @@ class ExportController extends Controller
     {
         $marques = Marque::pluck('nom', 'uuid');
         $fournisseurs = Fournisseur::pluck('nom', 'uuid');
+        $categories = Categorie::pluck('nom', 'uuid');
 
         return Article::orderBy('nom')->get()
             ->map(fn (Article $a) => [
                 'nom' => $a->nom,
+                'reference' => $a->reference,
                 'prix' => $a->prix,
+                'unite' => $a->unite,
+                'poids' => $a->poids,
                 'description' => $a->description,
                 'marque' => $marques[$a->marque_uuid] ?? null,
                 'fournisseur' => $fournisseurs[$a->fournisseur_uuid] ?? null,
+                'categorie' => $categories[$a->categorie_uuid] ?? null,
+                'caracteristiques' => $a->caracteristiques,
                 'images' => $a->images ?? [],
             ])
             ->all();
@@ -74,7 +81,7 @@ class ExportController extends Controller
     private function csv(string $type, array $rows): StreamedResponse
     {
         $colonnes = match ($type) {
-            'articles' => ['nom', 'prix', 'description', 'marque', 'fournisseur', 'images'],
+            'articles' => ['nom', 'reference', 'prix', 'unite', 'poids', 'description', 'marque', 'fournisseur', 'categorie', 'caracteristiques', 'images'],
             default => ['nom', 'description', 'logo'],
         };
 

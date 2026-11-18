@@ -86,3 +86,26 @@ test('une catégorie sans nom est refusée', function () {
 
     $this->postJson('/api/sync', ['categories' => [['uuid' => (string) Str::uuid()]]])->assertUnprocessable();
 });
+
+test('un article porte catégorie, référence, unité, poids et caractéristiques', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $categorie = uneCategorie('Alimentation');
+    $article = [
+        'uuid' => (string) Str::uuid(), 'nom' => 'Riz', 'prix' => 500, 'description' => null,
+        'categorie_uuid' => $categorie['uuid'], 'reference' => 'RIZ-5KG', 'unite' => 'sac',
+        'poids' => 5, 'caracteristiques' => 'Brisé, parfumé',
+    ];
+
+    $this->postJson('/api/sync', ['categories' => [$categorie], 'articles' => [$article]])->assertOk();
+
+    $this->getJson('/api/articles')
+        ->assertOk()
+        ->assertJsonPath('0.reference', 'RIZ-5KG')
+        ->assertJsonPath('0.categorie_uuid', $categorie['uuid'])
+        ->assertJsonPath('0.unite', 'sac')
+        ->assertJsonPath('0.poids', 5)
+        ->assertJsonPath('0.caracteristiques', 'Brisé, parfumé');
+
+    $this->postJson('/api/sync', ['articles' => [array_merge($article, ['unite' => 'tonne'])]])
+        ->assertStatus(422);
+});
